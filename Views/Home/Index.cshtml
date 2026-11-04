@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Identity
+@using CPTMS.Models.Entities
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Dashboard";
+    var currentUser = ViewBag.CurrentUser as ApplicationUser;
+}
+
+<!-- Welcome / Hero Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden text-white bg-gradient-primary p-4 p-md-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge bg-warning text-dark mb-2 px-3 py-2 rounded-pill fw-semibold">
+                        <i class="bi bi-rocket-takeoff-fill me-1"></i> Sprint 0 Baseline — MVC Foundation Active
+                    </span>
+                    <h1 class="display-6 fw-bold mb-2">Campus Project & Thesis Management System</h1>
+                    <p class="lead mb-3 text-white-50">
+                        Centralizing academic project governance, team formation, supervisor matching, milestone evaluations, and defense workflows.
+                    </p>
+                    @if (SignInManager.IsSignedIn(User) && currentUser != null)
+                    {
+                        <div class="d-flex align-items-center bg-white bg-opacity-10 p-3 rounded-3 text-white">
+                            <i class="bi bi-person-badge fs-2 me-3 text-warning"></i>
+                            <div>
+                                <div class="fw-bold fs-5">Welcome back, @currentUser.FullName!</div>
+                                <div class="small text-white-50">
+                                    Role: <span class="badge bg-light text-dark fw-bold">@currentUser.UserRole</span> | 
+                                    Department: @currentUser.Department
+                                    @if (!string.IsNullOrEmpty(currentUser.StudentIdNumber))
+                                    {
+                                        <span> | ID: @currentUser.StudentIdNumber</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex gap-2 mt-3">
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-warning btn-lg rounded-pill px-4 text-dark fw-semibold shadow-sm">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal
+                            </a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg rounded-pill px-4 fw-semibold">
+                                <i class="bi bi-person-plus me-1"></i> Create Account
+                            </a>
+                        </div>
+                    }
+                </div>
+                <div class="col-lg-4 text-center d-none d-lg-block">
+                    <i class="bi bi-diagram-3 display-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project & Course Meta Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="icon-circle bg-primary-subtle text-primary me-3">
+                    <i class="bi bi-mortarboard fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">Course Context</h6>
+                    <small class="text-muted">CSE470: Software Engineering</small>
+                </div>
+            </div>
+            <ul class="list-unstyled small text-secondary mb-0">
+                <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i><strong>Section:</strong> 13</li>
+                <li class="mb-2"><i class="bi bi-person-check text-primary me-2"></i><strong>Faculty:</strong> Mr. Soumya Swagata Biswas [SOSB]</li>
+                <li><i class="bi bi-calendar3 text-primary me-2"></i><strong>Sprint 0:</strong> Architecture & Base MVC</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="icon-circle bg-success-subtle text-success me-3">
+                    <i class="bi bi-code-square fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">MVC Architecture</h6>
+                    <small class="text-muted">Strict Model-View-Controller</small>
+                </div>
+            </div>
+            <ul class="list-unstyled small text-secondary mb-0">
+                <li class="mb-2"><i class="bi bi-layers text-success me-2"></i><strong>Backend:</strong> ASP.NET Core (.NET 8)</li>
+                <li class="mb-2"><i class="bi bi-window-sidebar text-success me-2"></i><strong>Views:</strong> Razor (.cshtml) + Bootstrap 5</li>
+                <li><i class="bi bi-database-check text-success me-2"></i><strong>ORM:</strong> Entity Framework Core (Code-First)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="icon-circle bg-warning-subtle text-dark me-3">
+                    <i class="bi bi-people fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">Team Contributors</h6>
+                    <small class="text-muted">Development Group</small>
+                </div>
+            </div>
+            <ul class="list-unstyled small text-secondary mb-0">
+                <li class="mb-1"><i class="bi bi-person-fill text-muted me-1"></i><strong>Walid Mahmood</strong> (22201456)</li>
+                <li class="mb-1"><i class="bi bi-person-fill text-muted me-1"></i><strong>Sabab Al Saba</strong> (24101529)</li>
+                <li><i class="bi bi-person-fill text-muted me-1"></i><strong>Md Iftekhar Islam Abir</strong> (21301109)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Architecture & Role Quick-Access Modules -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>CPTMS Substantive Feature Roadmap (Planned 24 Features)
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border h-100">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Team Formation (F1, F5)</div>
+                        <p class="small text-muted mb-0">Creation, student invites, CGPA & credit eligibility guard checks.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border h-100">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-search text-primary me-2"></i>Topic Discovery (F2, F6)</div>
+                        <p class="small text-muted mb-0">Search domain topics, duplicate title overlap detection.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border h-100">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-file-earmark-diff-fill text-primary me-2"></i>Proposals (F7-F11)</div>
+                        <p class="small text-muted mb-0">Structured proposal submission, supervisor review & version history.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border h-100">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-calendar2-check-fill text-primary me-2"></i>Milestones & Rubrics (F12-F20)</div>
+                        <p class="small text-muted mb-0">Deliverable submissions, meeting logs, defense scheduling & scoring.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

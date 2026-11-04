@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "System Architecture & Compliance";
+}
+
+<div class="row justify-content-center py-4">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+            <h2 class="fw-bold text-primary mb-3">
+                <i class="bi bi-shield-check me-2"></i>System Architecture & Course Compliance
+            </h2>
+            <p class="text-muted">
+                This application serves as the primary system for <strong>CSE470: Software Engineering</strong> (Section 13).
+            </p>
+
+            <div class="alert alert-info rounded-3">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Notice regarding Sprint 0:</strong> Login and registration constitute the foundational architectural MVC template and role-based baseline, in strict accordance with the project rulebook (auth is a baseline setup rather than one of the 20 assessed substantive features).
+            </div>
+
+            <h5 class="fw-bold mt-4">1. Architectural Guarantees</h5>
+            <ul>
+                <li><strong>Model-View-Controller Separation:</strong> Domain entities and EF Core persistence reside in <code>Models/Entities</code>; presentation templates are Razor Views in <code>Views/</code>; routing, validation, and request coordination are in <code>Controllers/</code>.</li>
+                <li><strong>Strict Framework Adherence:</strong> Built on ASP.NET Core (.NET 8 LTS) with Razor and Entity Framework Core. No forbidden Python or MERN dependencies.</li>
+                <li><strong>Role-Based Access Control (RBAC):</strong> Managed via ASP.NET Core Identity with roles for Students, Supervisors, Evaluators, and Department Coordinators.</li>
+            </ul>
+
+            <h5 class="fw-bold mt-4">2. Collaborative Development & Version Control</h5>
+            <p class="text-muted">
+                Collaborative source code is maintained on GitHub with mandatory one-week sprint cadences, branch-based feature tracking, and continuous commits.
+            </p>
+        </div>
+    </div>
+</div>
