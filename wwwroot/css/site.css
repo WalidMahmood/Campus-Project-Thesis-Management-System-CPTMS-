@@ -1,0 +1,57 @@
+:root {
+    --primary-color: #1a4f8b;
+    --primary-hover: #133c6a;
+    --accent-color: #f7a400;
+    --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    color: #2b303a;
+    background-color: #f6f8fb;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #184785 0%, #0d2a52 100%);
+}
+
+.brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+}
+
+.icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.btn-primary {
+    background-color: #1a4f8b;
+    border-color: #1a4f8b;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #133c6a;
+    border-color: #133c6a;
+}
+
+.demo-login-box {
+    border-left: 3px solid var(--accent-color) !important;
+}
