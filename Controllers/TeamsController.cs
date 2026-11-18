@@ -99,16 +99,22 @@ namespace CPTMS.Controllers
                 var myMemberships = await _context.TeamMemberships
                     .AsNoTracking()
                     .Include(m => m.Team)
-                        .ThenInclude(t => t!.Members)
-                            .ThenInclude(tm => tm.Student)
                     .Where(m => m.StudentId == currentUserId)
                     .ToListAsync();
 
                 var activeMembership = myMemberships.FirstOrDefault(m => m.Status == "Accepted");
-                if (activeMembership?.Team != null)
+                if (activeMembership != null)
                 {
-                    vm.MyActiveTeam = activeMembership.Team;
-                    vm.MyTeamEligibility = await _eligibilityService.EvaluateTeamAsync(activeMembership.TeamId);
+                    vm.MyActiveTeam = await _context.ProjectTeams
+                        .AsNoTracking()
+                        .Include(t => t.Members)
+                            .ThenInclude(tm => tm.Student)
+                        .FirstOrDefaultAsync(t => t.TeamId == activeMembership.TeamId);
+
+                    if (vm.MyActiveTeam != null)
+                    {
+                        vm.MyTeamEligibility = await _eligibilityService.EvaluateTeamAsync(activeMembership.TeamId);
+                    }
                 }
 
                 vm.PendingInvitations = myMemberships
