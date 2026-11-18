@@ -32,8 +32,13 @@
                 <div class="collapse navbar-collapse" id="navbarContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" asp-controller="Home" asp-action="Index">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
                                 <i class="bi bi-house-door me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Eligibility" asp-action="Index">
+                                <i class="bi bi-patch-check me-1"></i> Eligibility
                             </a>
                         </li>
                         <li class="nav-item">
@@ -51,6 +56,20 @@
 
     <main role="main" class="flex-grow-1 py-4">
         <div class="container-fluid px-4">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
             @RenderBody()
         </div>
     </main>
@@ -63,7 +82,7 @@
             </div>
             <div>
                 <span class="badge bg-secondary-subtle text-secondary me-2">Faculty: Mr. Soumya Swagata Biswas</span>
-                <span class="badge bg-primary-subtle text-primary">Sprint 0 Baseline</span>
+                <span class="badge bg-primary-subtle text-primary">Sprint 1 Active</span>
             </div>
         </div>
     </footer>

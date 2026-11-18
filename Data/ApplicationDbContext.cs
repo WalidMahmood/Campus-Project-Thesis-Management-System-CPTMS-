@@ -17,6 +17,7 @@ namespace CPTMS.Data
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Proposal> Proposals { get; set; } = null!;
         public DbSet<Milestone> Milestones { get; set; } = null!;
+        public DbSet<EligibilityRule> EligibilityRules { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -131,6 +132,35 @@ namespace CPTMS.Data
                 EmailConfirmed = true
             }, "Student@123456", "Student");
 
+            await SeedUserAsync(new ApplicationUser
+            {
+                UserName = "student3@cptms.edu",
+                Email = "student3@cptms.edu",
+                FullName = "Md Iftekhar Islam Abir",
+                Department = "Computer Science and Engineering",
+                StudentIdNumber = "21301109",
+                CGPA = 3.55,
+                Semester = 11,
+                CompletedCredits = 118,
+                UserRole = "Student",
+                EmailConfirmed = true
+            }, "Student@123456", "Student");
+
+            // Seed Demo Ineligible Student (useful for testing F5 eligibility rejections)
+            await SeedUserAsync(new ApplicationUser
+            {
+                UserName = "ineligible@cptms.edu",
+                Email = "ineligible@cptms.edu",
+                FullName = "Junior Undergrad Test Student",
+                Department = "Computer Science and Engineering",
+                StudentIdNumber = "24301999",
+                CGPA = 2.20,
+                Semester = 5,
+                CompletedCredits = 54,
+                UserRole = "Student",
+                EmailConfirmed = true
+            }, "Student@123456", "Student");
+
             // Seed Demo Supervisors
             await SeedUserAsync(new ApplicationUser
             {
@@ -157,6 +187,43 @@ namespace CPTMS.Data
                 UserRole = "Supervisor",
                 EmailConfirmed = true
             }, "Supervisor@123456", "Supervisor");
+
+            // Seed Default Eligibility Rules (F5)
+            var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            if (!await dbContext.EligibilityRules.AnyAsync())
+            {
+                dbContext.EligibilityRules.AddRange(
+                    new EligibilityRule
+                    {
+                        Name = "CSE Course Project Standard Eligibility",
+                        ProjectType = "Project",
+                        Department = "Computer Science and Engineering",
+                        MinTeamSize = 2,
+                        MaxTeamSize = 4,
+                        MinSemester = 7,
+                        MinCgpa = 2.50,
+                        MinCompletedCredits = 75,
+                        RequireSameDepartment = true,
+                        IsActive = true,
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new EligibilityRule
+                    {
+                        Name = "CSE Undergraduate Thesis Eligibility",
+                        ProjectType = "Thesis",
+                        Department = "Computer Science and Engineering",
+                        MinTeamSize = 1,
+                        MaxTeamSize = 4,
+                        MinSemester = 9,
+                        MinCgpa = 3.00,
+                        MinCompletedCredits = 95,
+                        RequireSameDepartment = true,
+                        IsActive = true,
+                        UpdatedAt = DateTime.UtcNow
+                    }
+                );
+                await dbContext.SaveChangesAsync();
+            }
         }
     }
 }

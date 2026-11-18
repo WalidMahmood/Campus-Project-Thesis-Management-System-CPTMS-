@@ -1,5 +1,6 @@
 using CPTMS.Data;
 using CPTMS.Models.Entities;
+using CPTMS.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,7 +48,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// 3. Add MVC Controllers with Views
+// 3. Register Domain Services & MVC Controllers with Views
+builder.Services.AddScoped<IEligibilityService, EligibilityService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
