@@ -139,8 +139,8 @@ The login interface includes role-based accounts for testing:
 * [x] **Authentication Baseline:** Developed Login, Logout (POST + CSRF protected), and Registration interface with role-based access control.
 * [x] **SRS Documentation & Version Control:** Structured SRS in `docs/` with multi-branch Git workflow.
 
-### Sprint 1 — Core Foundation & Discovery (In Progress)
+### Sprint 1 — Core Foundation & Discovery (Completed)
 * [x] **F5 — Eligibility Rules & Validation Engine** (`EligibilityController`, `IEligibilityService`, `EligibilityRule`): Configurable rules for team-size range, department, semester, CGPA, completed credits, and project type.
 * [x] **F1 — Team Formation & Membership Management** (`TeamsController`, `ProjectTeam`, `TeamMembership`): Team creation, teammate invitations, join requests, accept/reject/cancel, leadership transfer, coordinator approval/lock, and real-time `F5` eligibility enforcement.
-* [ ] **F2 — Topic Discovery** *(in progress on feature branch)*
-* [ ] **F3 — Faculty Supervision Capacity & Interests** *(in progress on feature branch)*
+* [x] **F2 — Topic Discovery** (`TopicsController`, `Topic`): Keyword search across title/description/skills, domain/skill/project-type/availability filters, faculty CRUD with ownership enforcement.
+* [x] **F3 — Faculty Supervision Capacity & Interests** (`FacultyController`, `FacultyProfile`): Supervisor capacity/interest management, server-side rejection of capacity exceeding Coordinator-approved limits, and Coordinator ceiling controls.
