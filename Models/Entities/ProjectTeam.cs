@@ -14,13 +14,23 @@ namespace CPTMS.Models.Entities
 
         [Required]
         [StringLength(100)]
-        public string Department { get; set; } = "CSE";
+        public string Department { get; set; } = "Computer Science and Engineering";
+
+        [Required]
+        [StringLength(30)]
+        [Display(Name = "Project Type")]
+        public string ProjectType { get; set; } = "Project"; // Project or Thesis
+
+        [StringLength(500)]
+        public string? Description { get; set; }
 
         public string CreatedByStudentId { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public bool IsApproved { get; set; } = false;
+
+        public bool IsLocked { get; set; } = false;
 
         // Navigation properties
         public virtual ICollection<TeamMembership> Members { get; set; } = new List<TeamMembership>();
@@ -43,8 +53,12 @@ namespace CPTMS.Models.Entities
 
         public string MembershipRole { get; set; } = "Member"; // Leader, Member
 
-        public string Status { get; set; } = "Pending"; // Pending, Accepted, Rejected
+        public string Status { get; set; } = "Pending"; // Invited, Requested, Accepted, Rejected, Removed
+
+        public string InitiatedBy { get; set; } = "Student"; // Leader or Student
 
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? RespondedAt { get; set; }
     }
 }
