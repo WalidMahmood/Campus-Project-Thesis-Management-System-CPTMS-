@@ -121,17 +121,26 @@ The login interface includes role-based accounts for testing:
 
 | Role | Email | Password | Access / Purpose |
 | :--- | :--- | :--- | :--- |
-| **Department Coordinator** | `coordinator@cptms.edu` | `Admin@123456` | Faculty administrator (topic approval, defense scheduling) |
-| **Faculty Supervisor** | `supervisor@cptms.edu` | `Supervisor@123456` | Thesis supervisor (proposal review, milestone tracking) |
-| **Student** | `student@cptms.edu` | `Student@123456` | Student (team creation, proposal submission) |
+| **Department Coordinator** | `coordinator@cptms.edu` | `Admin@123456` | Faculty administrator (eligibility rules, team approval, defense scheduling) |
+| **Faculty Supervisor (1)** | `supervisor@cptms.edu` | `Supervisor@123456` | Thesis supervisor (topics, supervision capacity, proposal review) |
+| **Faculty Supervisor (2)** | `supervisor2@cptms.edu` | `Supervisor@123456` | Second seeded faculty supervisor |
+| **Student (Eligible 1)** | `student@cptms.edu` | `Student@123456` | Walid Mahmood (Sem 10, CGPA 3.85, 110 credits) |
+| **Student (Eligible 2)** | `student2@cptms.edu` | `Student@123456` | Sabab Al Saba (Sem 9, CGPA 3.70, 98 credits) |
+| **Student (Eligible 3)** | `student3@cptms.edu` | `Student@123456` | Md Iftekhar Islam Abir (Sem 11, CGPA 3.55, 118 credits) |
+| **Student (Ineligible Test)** | `ineligible@cptms.edu` | `Student@123456` | Test account (Sem 5, CGPA 2.20, 54 credits) for verifying F5 rejection rules |
 
 ---
 
-## 📋 Sprint 0 Status & Attainment (Assignment 1)
+## 📋 Sprint Progress
 
+### Sprint 0 — Architecture & Setup (Completed)
 * [x] **Framework Setup & Architecture:** Finalized technology stack (**ASP.NET Core MVC .NET 8 + EF Core 8 + Razor Views + Bootstrap 5**) ensuring complete compliance with course rules (No Python backend, No MERN stack).
-* [x] **Repository & MVC Structure:** Created standard MVC project structure with clear separation across `Models/`, `Views/`, `Controllers/`, and `Data/`.
-* [x] **Authentication Baseline:** Developed Login, Logout, and Registration interface with input validation and role-based access control.
-* [x] **Data Modeling & Seed Configuration:** Implemented initial domain entities (`ApplicationUser`, `ProjectTeam`, `Project`, `Proposal`, `Milestone`) and automated database seeding in `ApplicationDbContext`.
-* [x] **SRS Documentation:** Prepared and structured the project SRS in the repository `docs/` folder.
-* [x] **Version Control:** Repository initialized with branch-based development workflow, `.gitignore`, and contributor configuration.
+* [x] **Repository & MVC Structure:** Created standard MVC project structure with clear separation across `Models/`, `Views/`, `Controllers/`, `Services/`, and `Data/`.
+* [x] **Authentication Baseline:** Developed Login, Logout (POST + CSRF protected), and Registration interface with role-based access control.
+* [x] **SRS Documentation & Version Control:** Structured SRS in `docs/` with multi-branch Git workflow.
+
+### Sprint 1 — Core Foundation & Discovery (In Progress)
+* [x] **F5 — Eligibility Rules & Validation Engine** (`EligibilityController`, `IEligibilityService`, `EligibilityRule`): Configurable rules for team-size range, department, semester, CGPA, completed credits, and project type.
+* [x] **F1 — Team Formation & Membership Management** (`TeamsController`, `ProjectTeam`, `TeamMembership`): Team creation, teammate invitations, join requests, accept/reject/cancel, leadership transfer, coordinator approval/lock, and real-time `F5` eligibility enforcement.
+* [ ] **F2 — Topic Discovery** *(in progress on feature branch)*
+* [ ] **F3 — Faculty Supervision Capacity & Interests** *(in progress on feature branch)*
