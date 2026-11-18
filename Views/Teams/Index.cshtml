@@ -1,0 +1,281 @@
+@model CPTMS.Models.ViewModels.TeamsIndexViewModel
+@{
+    ViewData["Title"] = "Project Teams";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-bold text-primary mb-1">
+            <i class="bi bi-people-fill me-2"></i>Project &amp; Thesis Teams
+        </h2>
+        <p class="text-muted mb-0">Form teams, send or respond to invitations, request membership, and verify eligibility.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Eligibility" asp-action="Index" class="btn btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-patch-check me-1"></i> Eligibility Rules
+        </a>
+        @if (Model.IsStudent && Model.MyActiveTeam == null)
+        {
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Create Team
+            </a>
+        }
+    </div>
+</div>
+
+@if (Model.IsStudent)
+{
+    <!-- My Active Team Banner -->
+    @if (Model.MyActiveTeam != null)
+    {
+        var acceptedCount = Model.MyActiveTeam.Members.Count(m => m.Status == "Accepted");
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+            <div class="card-header bg-gradient-primary text-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <span class="badge bg-warning text-dark me-2">My Active Team</span>
+                    <span class="fw-bold fs-5">@Model.MyActiveTeam.Name</span>
+                    <span class="badge bg-light text-dark ms-2">@Model.MyActiveTeam.ProjectType</span>
+                </div>
+                <a asp-action="Details" asp-route-id="@Model.MyActiveTeam.TeamId" class="btn btn-light btn-sm rounded-pill px-3 fw-semibold">
+                    <i class="bi bi-gear me-1"></i> Manage Team
+                </a>
+            </div>
+            <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="text-muted small mb-1">
+                        Department: <strong>@Model.MyActiveTeam.Department</strong> &bull;
+                        Members: <strong>@acceptedCount / @(Model.MyTeamEligibility?.MaxTeamSize ?? 4)</strong>
+                    </div>
+                    @if (Model.MyTeamEligibility != null)
+                    {
+                        if (Model.MyTeamEligibility.IsEligible)
+                        {
+                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> Eligible under @Model.MyTeamEligibility.RuleName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning-subtle text-dark border border-warning px-3 py-2">
+                                <i class="bi bi-exclamation-circle-fill text-warning me-1"></i>
+                                @Model.MyTeamEligibility.FailureReasons.FirstOrDefault()
+                            </span>
+                        }
+                    }
+                </div>
+                <div>
+                    @if (Model.MyActiveTeam.IsApproved)
+                    {
+                        <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-shield-check me-1"></i> Coordinator Approved</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">Forming / Pending Approval</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Incoming Invitations & Outgoing Requests -->
+    @if (Model.PendingInvitations.Any() || Model.MyPendingRequests.Any())
+    {
+        <div class="row g-4 mb-4">
+            @if (Model.PendingInvitations.Any())
+            {
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white py-3 px-4 border-bottom">
+                            <h6 class="fw-bold mb-0 text-primary">
+                                <i class="bi bi-envelope-paper-fill me-2"></i>Incoming Team Invitations (@Model.PendingInvitations.Count)
+                            </h6>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            @foreach (var invite in Model.PendingInvitations)
+                            {
+                                <div class="list-group-item px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@invite.TeamId" class="fw-bold text-decoration-none">
+                                            @invite.Team?.Name
+                                        </a>
+                                        <span class="badge bg-primary-subtle text-primary ms-1">@invite.Team?.ProjectType</span>
+                                        <div class="small text-muted">Invited @invite.JoinedAt.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <form asp-action="RespondToInvite" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="membershipId" value="@invite.MembershipId" />
+                                            <input type="hidden" name="decision" value="accept" />
+                                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Accept</button>
+                                        </form>
+                                        <form asp-action="RespondToInvite" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="membershipId" value="@invite.MembershipId" />
+                                            <input type="hidden" name="decision" value="reject" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Decline</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.MyPendingRequests.Any())
+            {
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white py-3 px-4 border-bottom">
+                            <h6 class="fw-bold mb-0 text-secondary">
+                                <i class="bi bi-hourglass-split me-2"></i>My Outgoing Join Requests (@Model.MyPendingRequests.Count)
+                            </h6>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            @foreach (var req in Model.MyPendingRequests)
+                            {
+                                <div class="list-group-item px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@req.TeamId" class="fw-bold text-decoration-none">
+                                            @req.Team?.Name
+                                        </a>
+                                        <span class="badge bg-light text-dark border ms-1">@req.Team?.ProjectType</span>
+                                        <div class="small text-muted">Requested @req.JoinedAt.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    <form asp-action="CancelPending" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="membershipId" value="@req.MembershipId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Cancel</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+<!-- Search & Filter Bar -->
+<div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+    <form asp-action="Index" method="get" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control border-start-0" placeholder="Search teams by name, department, or focus..." />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="projectType" class="form-select">
+                <option value="">All Project Types</option>
+                <option value="Project" selected="@(Model.ProjectTypeFilter == "Project")">Project</option>
+                <option value="Thesis" selected="@(Model.ProjectTypeFilter == "Thesis")">Thesis</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">Filter</button>
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Department Teams Directory -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Registered Teams Directory</h5>
+        <span class="badge bg-primary-subtle text-primary">@Model.AllTeams.Count team(s)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Team Name</th>
+                    <th>Type</th>
+                    <th>Leader</th>
+                    <th>Capacity</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.AllTeams.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-people display-6 d-block mb-2 text-secondary"></i>
+                            No teams found yet. @(Model.IsStudent ? "Be the first to create a project team!" : "Teams created by students will appear here.")
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var team in Model.AllTeams)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">@team.Name</div>
+                                <div class="small text-muted">@team.Department</div>
+                            </td>
+                            <td>
+                                <span class="badge @(team.ProjectType == "Thesis" ? "bg-info text-dark" : "bg-primary")">
+                                    @team.ProjectType
+                                </span>
+                            </td>
+                            <td class="small">@team.LeaderName</td>
+                            <td>
+                                <span class="badge @(team.AcceptedMemberCount >= team.MaxTeamSize ? "bg-secondary" : "bg-light text-dark border")">
+                                    @team.AcceptedMemberCount / @team.MaxTeamSize members
+                                </span>
+                                <div class="small text-muted">Min: @team.MinTeamSize</div>
+                            </td>
+                            <td>
+                                @if (team.IsApproved)
+                                {
+                                    <span class="badge bg-success-subtle text-success">Approved</span>
+                                }
+                                else if (team.IsLocked)
+                                {
+                                    <span class="badge bg-warning-subtle text-dark">Locked</span>
+                                }
+                                else if (team.AcceptedMemberCount >= team.MaxTeamSize)
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">Full</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary-subtle text-primary">Open</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-inline-flex gap-2">
+                                    <a asp-action="Details" asp-route-id="@team.TeamId" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        Details
+                                    </a>
+                                    @if (Model.IsStudent && Model.MyActiveTeam == null && team.CanRequestJoin && !team.HasPendingRequestFromCurrentUser && !team.HasPendingInviteForCurrentUser)
+                                    {
+                                        <form asp-action="RequestJoin" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="teamId" value="@team.TeamId" />
+                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                Request Join
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (team.HasPendingRequestFromCurrentUser)
+                                    {
+                                        <span class="badge bg-warning-subtle text-dark align-self-center px-2 py-1">Requested</span>
+                                    }
+                                    else if (team.HasPendingInviteForCurrentUser)
+                                    {
+                                        <span class="badge bg-info-subtle text-info align-self-center px-2 py-1">Invited</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

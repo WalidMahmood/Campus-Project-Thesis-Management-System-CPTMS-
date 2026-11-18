@@ -1,0 +1,313 @@
+@model CPTMS.Models.ViewModels.TeamDetailsViewModel
+@{
+    ViewData["Title"] = $"Team — {Model.Team.Name}";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="fw-bold text-primary mb-0">@Model.Team.Name</h2>
+            <span class="badge @(Model.Team.ProjectType == "Thesis" ? "bg-info text-dark" : "bg-primary")">@Model.Team.ProjectType</span>
+            @if (Model.Team.IsApproved)
+            {
+                <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i>Approved &amp; Locked</span>
+            }
+            else if (Model.Team.IsLocked)
+            {
+                <span class="badge bg-warning text-dark"><i class="bi bi-lock-fill me-1"></i>Locked</span>
+            }
+        </div>
+        <p class="text-muted mb-0">
+            @Model.Team.Department &bull; Created @Model.Team.CreatedAt.ToString("MMM dd, yyyy")
+            @if (!string.IsNullOrWhiteSpace(Model.Team.Description))
+            {
+                <span> &bull; @Model.Team.Description</span>
+            }
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> All Teams
+        </a>
+        @if (Model.IsCurrentUserAcceptedMember || Model.IsCoordinator || User.IsInRole("Supervisor"))
+        {
+            <a asp-controller="Eligibility" asp-action="CheckTeam" asp-route-id="@Model.Team.TeamId" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="bi bi-clipboard2-check me-1"></i> Full Eligibility Report
+            </a>
+        }
+        @if (Model.IsCoordinator)
+        {
+            if (!Model.Team.IsApproved)
+            {
+                <form asp-action="ApproveTeam" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                    <button type="submit" class="btn btn-success rounded-pill px-3">
+                        <i class="bi bi-check2-all me-1"></i> Approve &amp; Lock Team
+                    </button>
+                </form>
+            }
+            else
+            {
+                <form asp-action="UnlockTeam" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                    <button type="submit" class="btn btn-outline-warning text-dark rounded-pill px-3">
+                        <i class="bi bi-unlock me-1"></i> Unlock Team
+                    </button>
+                </form>
+            }
+        }
+    </div>
+</div>
+
+<!-- Live F5 Eligibility Banner -->
+<div class="alert @(Model.EligibilityReport.IsEligible ? "alert-success" : "alert-warning") rounded-4 p-4 shadow-sm mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+            <h6 class="fw-bold mb-1">
+                <i class="bi @(Model.EligibilityReport.IsEligible ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill") me-2"></i>
+                @(Model.EligibilityReport.IsEligible
+                    ? $"Team Meets All Eligibility Requirements ({Model.EligibilityReport.RuleName})"
+                    : $"Team Not Yet Eligible ({Model.EligibilityReport.RuleName})")
+            </h6>
+            <div class="small">
+                Team Size: <strong>@Model.AcceptedMembers.Count / @Model.EligibilityReport.MaxTeamSize</strong>
+                (Minimum required: @Model.EligibilityReport.MinTeamSize)
+            </div>
+            @if (!Model.EligibilityReport.IsEligible)
+            {
+                <ul class="small mb-0 mt-2">
+                    @foreach (var reason in Model.EligibilityReport.FailureReasons)
+                    {
+                        <li>@reason</li>
+                    }
+                </ul>
+            }
+        </div>
+        @if (Model.IsCurrentUserStudent && !Model.CurrentUserHasAnyTeam && !Model.Team.IsLocked)
+        {
+            if (Model.CurrentUserPendingInviteId.HasValue)
+            {
+                <div class="d-flex gap-2">
+                    <form asp-action="RespondToInvite" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="membershipId" value="@Model.CurrentUserPendingInviteId.Value" />
+                        <input type="hidden" name="decision" value="accept" />
+                        <button type="submit" class="btn btn-success rounded-pill px-3">Accept Invitation</button>
+                    </form>
+                    <form asp-action="RespondToInvite" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="membershipId" value="@Model.CurrentUserPendingInviteId.Value" />
+                        <input type="hidden" name="decision" value="reject" />
+                        <button type="submit" class="btn btn-outline-danger rounded-pill px-3">Decline</button>
+                    </form>
+                </div>
+            }
+            else if (!Model.CurrentUserHasPendingRequestHere && Model.AcceptedMembers.Count < Model.EligibilityReport.MaxTeamSize)
+            {
+                <form asp-action="RequestJoin" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-person-plus me-1"></i> Request to Join Team
+                    </button>
+                </form>
+            }
+            else if (Model.CurrentUserHasPendingRequestHere)
+            {
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Join Request Pending</span>
+            }
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Accepted Roster -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Accepted Team Members</h5>
+                <span class="badge bg-primary-subtle text-primary">@Model.AcceptedMembers.Count / @Model.EligibilityReport.MaxTeamSize</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Role</th>
+                            <th>Academics</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model.AcceptedMembers)
+                        {
+                            bool isSelf = member.StudentId == Model.CurrentUserId;
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-semibold">@(member.Student?.FullName ?? "Student")</div>
+                                    <div class="small text-muted">@(member.Student?.StudentIdNumber ?? member.Student?.Email)</div>
+                                </td>
+                                <td>
+                                    @if (member.MembershipRole == "Leader")
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>Leader</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border">Member</span>
+                                    }
+                                </td>
+                                <td class="small text-muted">
+                                    Sem @(member.Student?.Semester?.ToString() ?? "N/A") &bull;
+                                    CGPA @(member.Student?.CGPA?.ToString("F2") ?? "N/A") &bull;
+                                    @(member.Student?.CompletedCredits?.ToString() ?? "N/A") cr
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-inline-flex gap-1">
+                                        @if ((Model.IsCurrentUserLeader || Model.IsCoordinator) && member.MembershipRole != "Leader" && !Model.Team.IsLocked)
+                                        {
+                                            <form asp-action="TransferLeadership" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                                                <input type="hidden" name="newLeaderMembershipId" value="@member.MembershipId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill" title="Promote to Leader">
+                                                    Make Leader
+                                                </button>
+                                            </form>
+                                        }
+                                        @if ((!Model.Team.IsLocked || Model.IsCoordinator) &&
+                                             ((Model.IsCurrentUserLeader && !isSelf) || isSelf || Model.IsCoordinator))
+                                        {
+                                            <form asp-action="RemoveMember" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="membershipId" value="@member.MembershipId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                                    @(isSelf ? "Leave" : "Remove")
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Invite & Pending Requests -->
+    <div class="col-lg-5">
+        @if (Model.IsCurrentUserLeader && !Model.Team.IsLocked)
+        {
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h6 class="fw-bold text-primary mb-2">
+                    <i class="bi bi-person-plus-fill me-2"></i>Invite a Teammate
+                </h6>
+                <p class="small text-muted mb-3">
+                    Select an available student or enter their Email / Student ID. Eligibility &amp; team-size rules are verified automatically.
+                </p>
+
+                @if (Model.AvailableStudentsToInvite.Any())
+                {
+                    <form asp-action="InviteMember" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                        <label class="form-label small fw-semibold">Quick Select Student</label>
+                        <div class="input-group">
+                            <select name="identifier" class="form-select form-select-sm">
+                                @foreach (var s in Model.AvailableStudentsToInvite)
+                                {
+                                    <option value="@s.Id">
+                                        @s.FullName (@(s.StudentIdNumber ?? s.Email) — Sem @(s.Semester?.ToString() ?? "?"), CGPA @(s.CGPA?.ToString("F2") ?? "?"))
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm px-3">Invite</button>
+                        </div>
+                    </form>
+                }
+
+                <form asp-action="InviteMember" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="teamId" value="@Model.Team.TeamId" />
+                    <label class="form-label small fw-semibold">Or Invite by Email / Student ID</label>
+                    <div class="input-group">
+                        <input type="text" name="identifier" class="form-control form-control-sm" placeholder="e.g. student2@cptms.edu or 24101529" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm px-3">Send Invite</button>
+                    </div>
+                </form>
+            </div>
+        }
+
+        <!-- Incoming Join Requests (visible to Leader / Coordinator) -->
+        @if ((Model.IsCurrentUserLeader || Model.IsCoordinator) && Model.PendingJoinRequests.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-inbox-fill me-2"></i>Pending Join Requests (@Model.PendingJoinRequests.Count)
+                    </h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    @foreach (var req in Model.PendingJoinRequests)
+                    {
+                        <div class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center gap-2">
+                            <div>
+                                <div class="fw-semibold">@(req.Student?.FullName ?? "Student")</div>
+                                <div class="small text-muted">
+                                    @(req.Student?.StudentIdNumber ?? req.Student?.Email) &bull;
+                                    Sem @(req.Student?.Semester?.ToString() ?? "?"), CGPA @(req.Student?.CGPA?.ToString("F2") ?? "?")
+                                </div>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <form asp-action="RespondToRequest" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="membershipId" value="@req.MembershipId" />
+                                    <input type="hidden" name="decision" value="accept" />
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill">Accept</button>
+                                </form>
+                                <form asp-action="RespondToRequest" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="membershipId" value="@req.MembershipId" />
+                                    <input type="hidden" name="decision" value="reject" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Pending Sent Invitations -->
+        @if ((Model.IsCurrentUserLeader || Model.IsCoordinator) && Model.PendingInvitations.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h6 class="fw-bold mb-0 text-secondary">
+                        <i class="bi bi-send-fill me-2"></i>Pending Sent Invitations (@Model.PendingInvitations.Count)
+                    </h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    @foreach (var inv in Model.PendingInvitations)
+                    {
+                        <div class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center gap-2">
+                            <div>
+                                <div class="fw-semibold">@(inv.Student?.FullName ?? "Student")</div>
+                                <div class="small text-muted">Invited @inv.JoinedAt.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <form asp-action="CancelPending" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="membershipId" value="@inv.MembershipId" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill">Cancel</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
