@@ -55,6 +55,7 @@ namespace CPTMS.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var logger = serviceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
 
             string[] roles = { "Student", "Supervisor", "Evaluator", "Coordinator", "Administrator" };
 
@@ -62,70 +63,100 @@ namespace CPTMS.Data
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
+                    var roleResult = await roleManager.CreateAsync(new IdentityRole(role));
+                    if (!roleResult.Succeeded)
+                    {
+                        logger.LogWarning("Failed to create role {Role}: {Errors}", role, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+            }
+
+            async Task SeedUserAsync(ApplicationUser newUser, string password, string roleName)
+            {
+                var existing = await userManager.FindByEmailAsync(newUser.Email!);
+                if (existing != null) return;
+
+                var createResult = await userManager.CreateAsync(newUser, password);
+                if (!createResult.Succeeded)
+                {
+                    logger.LogWarning("Failed to seed user {Email}: {Errors}", newUser.Email, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                    return;
+                }
+
+                var addRoleResult = await userManager.AddToRoleAsync(newUser, roleName);
+                if (!addRoleResult.Succeeded)
+                {
+                    logger.LogWarning("Failed to assign role {Role} to {Email}: {Errors}", roleName, newUser.Email, string.Join(", ", addRoleResult.Errors.Select(e => e.Description)));
                 }
             }
 
             // Seed Demo Coordinator (Faculty Admin)
-            var coordinatorEmail = "coordinator@cptms.edu";
-            var coordinatorUser = await userManager.FindByEmailAsync(coordinatorEmail);
-            if (coordinatorUser == null)
+            await SeedUserAsync(new ApplicationUser
             {
-                coordinatorUser = new ApplicationUser
-                {
-                    UserName = coordinatorEmail,
-                    Email = coordinatorEmail,
-                    FullName = "Mr. Soumya Swagata Biswas",
-                    Department = "Computer Science and Engineering",
-                    Designation = "Assistant Professor & Coordinator",
-                    UserRole = "Coordinator",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(coordinatorUser, "Admin@123456");
-                await userManager.AddToRoleAsync(coordinatorUser, "Coordinator");
-            }
+                UserName = "coordinator@cptms.edu",
+                Email = "coordinator@cptms.edu",
+                FullName = "Mr. Soumya Swagata Biswas",
+                Department = "Computer Science and Engineering",
+                Designation = "Assistant Professor & Coordinator",
+                UserRole = "Coordinator",
+                EmailConfirmed = true
+            }, "Admin@123456", "Coordinator");
 
-            // Seed Demo Student
-            var studentEmail = "student@cptms.edu";
-            var studentUser = await userManager.FindByEmailAsync(studentEmail);
-            if (studentUser == null)
+            // Seed Demo Students
+            await SeedUserAsync(new ApplicationUser
             {
-                studentUser = new ApplicationUser
-                {
-                    UserName = studentEmail,
-                    Email = studentEmail,
-                    FullName = "Walid Mahmood",
-                    Department = "Computer Science and Engineering",
-                    StudentIdNumber = "22201456",
-                    CGPA = 3.85,
-                    CompletedCredits = 110,
-                    UserRole = "Student",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(studentUser, "Student@123456");
-                await userManager.AddToRoleAsync(studentUser, "Student");
-            }
+                UserName = "student@cptms.edu",
+                Email = "student@cptms.edu",
+                FullName = "Walid Mahmood",
+                Department = "Computer Science and Engineering",
+                StudentIdNumber = "22201456",
+                CGPA = 3.85,
+                Semester = 10,
+                CompletedCredits = 110,
+                UserRole = "Student",
+                EmailConfirmed = true
+            }, "Student@123456", "Student");
 
-            // Seed Demo Supervisor
-            var supervisorEmail = "supervisor@cptms.edu";
-            var supervisorUser = await userManager.FindByEmailAsync(supervisorEmail);
-            if (supervisorUser == null)
+            await SeedUserAsync(new ApplicationUser
             {
-                supervisorUser = new ApplicationUser
-                {
-                    UserName = supervisorEmail,
-                    Email = supervisorEmail,
-                    FullName = "Dr. Academic Supervisor",
-                    Department = "Computer Science and Engineering",
-                    Designation = "Associate Professor",
-                    MaxSupervisionCapacity = 5,
-                    ResearchInterests = "Software Engineering, Distributed Systems, ML",
-                    UserRole = "Supervisor",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(supervisorUser, "Supervisor@123456");
-                await userManager.AddToRoleAsync(supervisorUser, "Supervisor");
-            }
+                UserName = "student2@cptms.edu",
+                Email = "student2@cptms.edu",
+                FullName = "Sabab Al Saba",
+                Department = "Computer Science and Engineering",
+                StudentIdNumber = "24101529",
+                CGPA = 3.70,
+                Semester = 9,
+                CompletedCredits = 98,
+                UserRole = "Student",
+                EmailConfirmed = true
+            }, "Student@123456", "Student");
+
+            // Seed Demo Supervisors
+            await SeedUserAsync(new ApplicationUser
+            {
+                UserName = "supervisor@cptms.edu",
+                Email = "supervisor@cptms.edu",
+                FullName = "Dr. Academic Supervisor",
+                Department = "Computer Science and Engineering",
+                Designation = "Associate Professor",
+                MaxSupervisionCapacity = 5,
+                ResearchInterests = "Software Engineering, Distributed Systems, ML",
+                UserRole = "Supervisor",
+                EmailConfirmed = true
+            }, "Supervisor@123456", "Supervisor");
+
+            await SeedUserAsync(new ApplicationUser
+            {
+                UserName = "supervisor2@cptms.edu",
+                Email = "supervisor2@cptms.edu",
+                FullName = "Dr. Nadia Rahman",
+                Department = "Computer Science and Engineering",
+                Designation = "Assistant Professor",
+                MaxSupervisionCapacity = 4,
+                ResearchInterests = "Computer Vision, NLP, Healthcare AI",
+                UserRole = "Supervisor",
+                EmailConfirmed = true
+            }, "Supervisor@123456", "Supervisor");
         }
     }
 }
