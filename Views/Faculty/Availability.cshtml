@@ -1,0 +1,190 @@
+@model FacultyAvailabilityViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Faculty Availability";
+    var currentUserId = UserManager.GetUserId(User);
+    var isSupervisor = User.IsInRole("Supervisor");
+    var isCoordinator = User.IsInRole("Coordinator");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-person-workspace text-primary me-2"></i>Faculty Supervision Availability</h2>
+        <p class="text-muted mb-0">Explore supervisors' research interests, eligibility conditions, and open supervision slots.</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (isSupervisor)
+        {
+            <a asp-action="EditProfile" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-sliders me-1"></i> Manage My Capacity &amp; Interests
+            </a>
+        }
+        @if (isCoordinator)
+        {
+            <a asp-action="ManageLimits" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-shield-check me-1"></i> Manage Approved Limits
+            </a>
+        }
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle me-1"></i> @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["WarningMessage"] is string warningMessage)
+{
+    <div class="alert alert-warning alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i> @warningMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form asp-action="Availability" method="get" class="row g-3 align-items-end">
+            <div class="col-lg-6">
+                <label asp-for="SearchQuery" class="form-label fw-semibold text-secondary small"></label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                    <input asp-for="SearchQuery" class="form-control" placeholder="e.g. Machine Learning, Computer Vision, CGPA" />
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-check mb-2">
+                    <input asp-for="HasOpenSlotsOnly" class="form-check-input" />
+                    <label asp-for="HasOpenSlotsOnly" class="form-check-label small fw-semibold text-secondary"></label>
+                </div>
+            </div>
+            <div class="col-lg-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-funnel me-1"></i> Apply
+                </button>
+                <a asp-action="Availability" class="btn btn-outline-secondary rounded-pill px-4">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Results.Any())
+{
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body text-center py-5">
+            <div class="icon-circle bg-primary-subtle text-primary mx-auto mb-3">
+                <i class="bi bi-person-x fs-4"></i>
+            </div>
+            <h5 class="fw-bold mb-2">No faculty match your filters</h5>
+            <p class="text-muted mb-3">Try another keyword or turn off the "open slots only" filter.</p>
+            <a asp-action="Availability" class="btn btn-outline-primary rounded-pill px-4">Show all faculty</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var faculty in Model.Results)
+        {
+            var barClass = faculty.CurrentSupervisionLoad >= faculty.MaxSupervisionLoad
+                ? "bg-danger"
+                : (faculty.LoadPercentage >= 75 ? "bg-warning" : "bg-success");
+            var isMe = faculty.UserId == currentUserId;
+
+            <div class="col-xl-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    @faculty.FullName
+                                    @if (isMe)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary-emphasis ms-1">You</span>
+                                    }
+                                </h5>
+                                <div class="small text-muted">
+                                    @if (!string.IsNullOrWhiteSpace(faculty.Designation))
+                                    {
+                                        <span>@faculty.Designation &middot; </span>
+                                    }
+                                    @faculty.Department
+                                </div>
+                                <a href="mailto:@faculty.Email" class="small text-decoration-none">@faculty.Email</a>
+                            </div>
+                            @if (faculty.HasOpenSlots)
+                            {
+                                <span class="badge bg-success-subtle text-success-emphasis">
+                                    <i class="bi bi-check-circle me-1"></i>Open slots
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                    <i class="bi bi-pause-circle me-1"></i>At capacity
+                                </span>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            @foreach (var interest in faculty.ResearchInterests.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            {
+                                <span class="badge bg-light text-dark border me-1 mb-1">@interest</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(faculty.EligibilityConditions))
+                        {
+                            <div class="alert alert-light border small rounded-3 py-2 mb-3">
+                                <i class="bi bi-clipboard-check text-primary me-1"></i>
+                                <strong>Eligibility:</strong> @faculty.EligibilityConditions
+                            </div>
+                        }
+
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Current load / declared maximum</span>
+                                <span class="fw-semibold">@faculty.CurrentSupervisionLoad / @faculty.MaxSupervisionLoad</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar @barClass" role="progressbar"
+                                     style="width: @faculty.LoadPercentage%;"
+                                     aria-valuenow="@faculty.LoadPercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
+                            <div class="row g-2 text-center mb-3">
+                                <div class="col-4">
+                                    <div class="border rounded-3 py-2">
+                                        <div class="fw-bold">@faculty.ApprovedCapacityLimit</div>
+                                        <div class="small text-muted">Approved ceiling</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded-3 py-2">
+                                        <div class="fw-bold">@faculty.RemainingSlots</div>
+                                        <div class="small text-muted">Slots left</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded-3 py-2">
+                                        <div class="fw-bold">@faculty.TopicCount</div>
+                                        <div class="small text-muted">Topics offered</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (isMe)
+                            {
+                                <a asp-action="EditProfile" class="btn btn-outline-primary btn-sm rounded-pill w-100">
+                                    <i class="bi bi-sliders me-1"></i> Update My Supervision Profile
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

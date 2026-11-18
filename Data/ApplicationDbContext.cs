@@ -18,6 +18,7 @@ namespace CPTMS.Data
         public DbSet<Proposal> Proposals { get; set; } = null!;
         public DbSet<Milestone> Milestones { get; set; } = null!;
         public DbSet<Topic> Topics { get; set; } = null!;
+        public DbSet<FacultyProfile> FacultyProfiles { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -57,6 +58,17 @@ namespace CPTMS.Data
                 .WithMany()
                 .HasForeignKey(t => t.FacultyOwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure FacultyProfile - User relation (one profile per faculty member)
+            builder.Entity<FacultyProfile>()
+                .HasIndex(fp => fp.UserId)
+                .IsUnique();
+
+            builder.Entity<FacultyProfile>()
+                .HasOne(fp => fp.User)
+                .WithMany()
+                .HasForeignKey(fp => fp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         public static async Task SeedRolesAndAdminAsync(IServiceProvider serviceProvider)
@@ -251,6 +263,38 @@ namespace CPTMS.Data
 
                     await seedContext.SaveChangesAsync();
                 }
+            }
+
+            // Seed Faculty Profiles (F3 - Faculty Supervision Capacity & Interests)
+            if (!await seedContext.FacultyProfiles.AnyAsync())
+            {
+                async Task SeedFacultyProfileAsync(string email, int declaredLoad, int approvedLimit, int currentLoad, string eligibility)
+                {
+                    var user = await userManager.FindByEmailAsync(email);
+                    if (user == null) return;
+                    if (await seedContext.FacultyProfiles.AnyAsync(p => p.UserId == user.Id)) return;
+
+                    seedContext.FacultyProfiles.Add(new FacultyProfile
+                    {
+                        UserId = user.Id,
+                        Department = user.Department,
+                        ResearchInterests = string.IsNullOrWhiteSpace(user.ResearchInterests)
+                            ? "Not specified"
+                            : user.ResearchInterests,
+                        EligibilityConditions = eligibility,
+                        MaxSupervisionLoad = declaredLoad,
+                        ApprovedCapacityLimit = approvedLimit,
+                        CurrentSupervisionLoad = currentLoad,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+
+                await SeedFacultyProfileAsync("supervisor@cptms.edu", 4, 5, 1,
+                    "Minimum CGPA 3.2; completed CSE370 and CSE470.");
+                await SeedFacultyProfileAsync("supervisor2@cptms.edu", 3, 4, 0,
+                    "Minimum CGPA 3.0; strong Python and data-analysis background.");
+
+                await seedContext.SaveChangesAsync();
             }
         }
     }
