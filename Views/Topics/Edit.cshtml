@@ -1,0 +1,103 @@
+@model TopicFormViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Edit Topic";
+    var isCoordinator = User.IsInRole("Coordinator");
+}
+
+<div class="mb-4">
+    <a asp-action="Details" asp-route-id="@Model.TopicId" class="small text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Back to topic
+    </a>
+    <h2 class="fw-bold mb-1 mt-1"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Topic</h2>
+    <p class="text-muted mb-0">Update the topic details. Assigned team counts are managed by the workflow, not here.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="alert alert-info rounded-3 small">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>@Model.CurrentAssignedCount team(s)</strong> are already assigned to this topic.
+            Capacity cannot be reduced below that number.
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-gradient-primary text-white p-4 rounded-top-4">
+                <h5 class="fw-bold mb-1">Topic Details</h5>
+                <p class="small mb-0 text-white-50">
+                    Owner: <strong>@(Model.FacultyOwnerDisplay ?? "You")</strong>
+                </p>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Edit" asp-route-id="@Model.TopicId" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input asp-for="TopicId" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small rounded-3" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label fw-semibold text-secondary"></label>
+                        <input asp-for="Title" class="form-control" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Domain" class="form-label fw-semibold text-secondary"></label>
+                            <select asp-for="Domain" asp-items="@(new SelectList(Model.AvailableDomains))" class="form-select">
+                                <option value="">-- Select domain --</option>
+                            </select>
+                            <span asp-validation-for="Domain" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="ProjectType" class="form-label fw-semibold text-secondary"></label>
+                            <select asp-for="ProjectType" asp-items="@(new SelectList(Model.ProjectTypes))" class="form-select"></select>
+                            <span asp-validation-for="ProjectType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Capacity" class="form-label fw-semibold text-secondary"></label>
+                            <input asp-for="Capacity" class="form-control" min="1" max="10" />
+                            <span asp-validation-for="Capacity" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="RequiredSkills" class="form-label fw-semibold text-secondary"></label>
+                        <input asp-for="RequiredSkills" class="form-control" />
+                        <div class="form-text">Separate skills with commas so students can filter by skill.</div>
+                        <span asp-validation-for="RequiredSkills" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold text-secondary"></label>
+                        <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    @if (isCoordinator)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="FacultyOwnerId" class="form-label fw-semibold text-secondary"></label>
+                            <select asp-for="FacultyOwnerId" asp-items="Model.FacultyOptions" class="form-select">
+                                <option value="">-- Keep current owner --</option>
+                            </select>
+                            <span asp-validation-for="FacultyOwnerId" class="text-danger small"></span>
+                        </div>
+                    }
+
+                    <div class="form-check mb-4">
+                        <input asp-for="IsAvailable" class="form-check-input" />
+                        <label asp-for="IsAvailable" class="form-check-label text-secondary"></label>
+                        <div class="form-text">A topic with no remaining slots still shows as full even when open.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Save Changes
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.TopicId" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
