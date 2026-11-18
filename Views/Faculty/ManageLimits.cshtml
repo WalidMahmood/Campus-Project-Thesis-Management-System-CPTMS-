@@ -1,0 +1,106 @@
+@model List<UpdateApprovedLimitViewModel>
+@{
+    ViewData["Title"] = "Manage Approved Limits";
+}
+
+<div class="mb-4">
+    <a asp-action="Availability" class="small text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Back to faculty availability
+    </a>
+    <h2 class="fw-bold mb-1 mt-1"><i class="bi bi-shield-check text-primary me-2"></i>Manage Approved Capacity Limits</h2>
+    <p class="text-muted mb-0">
+        Set the maximum supervision load the department permits for each faculty member.
+        Coordinators can raise or lower this ceiling; supervisors cannot exceed it.
+    </p>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle me-1"></i> @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["WarningMessage"] is string warningMessage)
+{
+    <div class="alert alert-warning alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i> @warningMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger rounded-3" role="alert"></div>
+}
+
+<div class="alert alert-light border rounded-3 small">
+    <i class="bi bi-info-circle text-primary me-1"></i>
+    A ceiling cannot be set below a supervisor's current active load. If the new ceiling is below their declared
+    maximum load, the declared load is reduced automatically and a warning is shown.
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Supervisor</th>
+                    <th>Department</th>
+                    <th class="text-center">Current Load</th>
+                    <th class="text-center">Declared Max</th>
+                    <th class="text-center">Approved Ceiling</th>
+                    <th class="text-end pe-4">Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            No faculty members with the Supervisor role were found.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-semibold text-dark">@item.FullName</div>
+                                <div class="small text-muted">@item.Designation</div>
+                                @if (item.FacultyProfileId == null)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">Profile not initialized</span>
+                                }
+                            </td>
+                            <td class="small text-muted">@item.Department</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">@item.CurrentSupervisionLoad</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary-emphasis">@item.MaxSupervisionLoad</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success-subtle text-success-emphasis">@item.ApprovedCapacityLimit</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <form asp-action="ManageLimits" method="post" class="d-flex gap-2 justify-content-end">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="UserId" value="@item.UserId" />
+                                    <input type="number" name="ApprovedCapacityLimit" value="@item.ApprovedCapacityLimit"
+                                           min="0" max="20" required class="form-control form-control-sm"
+                                           style="width: 90px;" aria-label="Approved capacity limit for @item.FullName" />
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
+                                        Save
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
