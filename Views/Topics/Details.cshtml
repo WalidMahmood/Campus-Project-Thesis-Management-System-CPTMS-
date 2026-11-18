@@ -1,0 +1,139 @@
+@model TopicDetailsViewModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Topic Details";
+    var currentUserId = UserManager.GetUserId(User);
+    var canManage = Model.FacultyOwnerId == currentUserId || User.IsInRole("Coordinator");
+    var progress = Model.Capacity == 0 ? 0 : (int)Math.Round(Model.CurrentAssignedCount * 100.0 / Model.Capacity);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <a asp-action="Index" class="small text-decoration-none text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back to topics
+        </a>
+        <h2 class="fw-bold mb-1 mt-1">@Model.Title</h2>
+        <div>
+            <span class="badge bg-primary-subtle text-primary-emphasis">@Model.Domain</span>
+            <span class="badge bg-secondary-subtle text-secondary-emphasis">@Model.ProjectType</span>
+            @if (Model.IsOpenForApplications)
+            {
+                <span class="badge bg-success-subtle text-success-emphasis">
+                    <i class="bi bi-check-circle me-1"></i>Open for applications
+                </span>
+            }
+            else if (Model.CurrentAssignedCount >= Model.Capacity)
+            {
+                <span class="badge bg-danger-subtle text-danger-emphasis">
+                    <i class="bi bi-x-circle me-1"></i>Full
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    <i class="bi bi-pause-circle me-1"></i>Closed
+                </span>
+            }
+        </div>
+    </div>
+    @if (canManage)
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.TopicId" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-pencil-square me-1"></i> Edit Topic
+            </a>
+            <form asp-action="ToggleAvailability" asp-route-id="@Model.TopicId" method="post" class="d-inline">
+                <button type="submit" class="btn @(Model.IsAvailable ? "btn-outline-danger" : "btn-outline-success") rounded-pill px-4">
+                    @if (Model.IsAvailable)
+                    {
+                        <i class="bi bi-pause-circle me-1"></i> <text>Close Applications</text>
+                    }
+                    else
+                    {
+                        <i class="bi bi-play-circle me-1"></i> <text>Reopen Applications</text>
+                    }
+                </button>
+            </form>
+        </div>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle me-1"></i> @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-file-text text-primary me-2"></i>Topic Description</h5>
+                <p class="text-secondary mb-4" style="white-space: pre-line;">@Model.Description</p>
+
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-tools text-primary me-2"></i>Required Skills</h6>
+                <div class="mb-4">
+                    @foreach (var skill in Model.RequiredSkills.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        <span class="badge bg-light text-dark border me-1 mb-1 px-3 py-2">@skill</span>
+                    }
+                </div>
+
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-calendar3 text-primary me-2"></i>Published</h6>
+                <p class="text-muted small mb-0">@Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Team Capacity</h6>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-muted">Assigned teams</span>
+                    <span class="fw-bold">@Model.CurrentAssignedCount / @Model.Capacity</span>
+                </div>
+                <div class="progress mb-3" style="height: 9px;">
+                    <div class="progress-bar @(Model.CurrentAssignedCount >= Model.Capacity ? "bg-danger" : "bg-primary")"
+                         role="progressbar" style="width: @progress%;"
+                         aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span class="text-muted">Remaining slots</span>
+                    <span class="badge @(Model.RemainingSlots > 0 ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">
+                        @Model.RemainingSlots
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-badge text-primary me-2"></i>Faculty Supervisor</h6>
+                <div class="fw-bold text-dark">@Model.FacultyOwnerName</div>
+                @if (!string.IsNullOrWhiteSpace(Model.FacultyOwnerDesignation))
+                {
+                    <div class="small text-muted">@Model.FacultyOwnerDesignation</div>
+                }
+                <div class="small text-muted mb-3">@Model.FacultyOwnerDepartment</div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FacultyOwnerEmail))
+                {
+                    <div class="small mb-2">
+                        <i class="bi bi-envelope text-primary me-1"></i>
+                        <a href="mailto:@Model.FacultyOwnerEmail" class="text-decoration-none">@Model.FacultyOwnerEmail</a>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.FacultyOwnerResearchInterests))
+                {
+                    <div class="small text-muted">
+                        <i class="bi bi-lightbulb text-primary me-1"></i>@Model.FacultyOwnerResearchInterests
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

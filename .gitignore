@@ -11,6 +11,8 @@ obj/
 ## Database / Local data files
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 

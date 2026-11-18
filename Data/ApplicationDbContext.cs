@@ -17,6 +17,7 @@ namespace CPTMS.Data
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Proposal> Proposals { get; set; } = null!;
         public DbSet<Milestone> Milestones { get; set; } = null!;
+        public DbSet<Topic> Topics { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -49,6 +50,13 @@ namespace CPTMS.Data
                 .WithMany(p => p.Milestones)
                 .HasForeignKey(m => m.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Topic - FacultyOwner relation
+            builder.Entity<Topic>()
+                .HasOne(t => t.FacultyOwner)
+                .WithMany()
+                .HasForeignKey(t => t.FacultyOwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         public static async Task SeedRolesAndAdminAsync(IServiceProvider serviceProvider)
@@ -157,6 +165,93 @@ namespace CPTMS.Data
                 UserRole = "Supervisor",
                 EmailConfirmed = true
             }, "Supervisor@123456", "Supervisor");
+
+            // Seed Sample Topics (F2 - Topic Discovery)
+            var seedContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            if (!await seedContext.Topics.AnyAsync())
+            {
+                var supervisor1 = await userManager.FindByEmailAsync("supervisor@cptms.edu");
+                var supervisor2 = await userManager.FindByEmailAsync("supervisor2@cptms.edu");
+
+                if (supervisor1 != null && supervisor2 != null)
+                {
+                    seedContext.Topics.AddRange(
+                        new Topic
+                        {
+                            Title = "AI-Powered Crop Disease Detection",
+                            Description = "Design and evaluate a convolutional neural network pipeline that identifies common crop diseases from leaf images and provides treatment guidance to small-scale farmers through a lightweight web dashboard.",
+                            Domain = "Artificial Intelligence",
+                            RequiredSkills = "Python, TensorFlow, OpenCV, Flask",
+                            ProjectType = "Project",
+                            Capacity = 3,
+                            CurrentAssignedCount = 1,
+                            IsAvailable = true,
+                            FacultyOwnerId = supervisor2.Id
+                        },
+                        new Topic
+                        {
+                            Title = "Zero-Trust Session Management for University Portals",
+                            Description = "Investigate zero-trust authentication patterns and prototype a session-management layer that continuously validates device posture, user behaviour, and least-privilege access for a campus portal.",
+                            Domain = "Cybersecurity",
+                            RequiredSkills = "C#, ASP.NET Core Identity, OAuth 2.0, SQL",
+                            ProjectType = "Thesis",
+                            Capacity = 2,
+                            CurrentAssignedCount = 0,
+                            IsAvailable = true,
+                            FacultyOwnerId = supervisor1.Id
+                        },
+                        new Topic
+                        {
+                            Title = "Explainable Clinical Decision Support for Dengue Triage",
+                            Description = "Build and explain a machine-learning triage model for dengue patients using tabular clinical data, with SHAP-based explanations reviewed against physician judgement.",
+                            Domain = "Data Science",
+                            RequiredSkills = "Python, scikit-learn, SHAP, Pandas",
+                            ProjectType = "Thesis",
+                            Capacity = 1,
+                            CurrentAssignedCount = 1,
+                            IsAvailable = true,
+                            FacultyOwnerId = supervisor2.Id
+                        },
+                        new Topic
+                        {
+                            Title = "Smart Campus Navigation and Room Booking App",
+                            Description = "Develop a mobile-first campus companion that combines indoor navigation, live room occupancy, and booking workflows for students and faculty.",
+                            Domain = "Web & Distributed Systems",
+                            RequiredSkills = "Flutter, REST APIs, ASP.NET Core, SQLite",
+                            ProjectType = "Project",
+                            Capacity = 4,
+                            CurrentAssignedCount = 2,
+                            IsAvailable = true,
+                            FacultyOwnerId = supervisor1.Id
+                        },
+                        new Topic
+                        {
+                            Title = "Blockchain-Based Academic Credential Verification",
+                            Description = "Examine decentralized identity standards and prototype a verifiable-credential registry that allows employers to validate university certificates without contacting the registrar.",
+                            Domain = "Cybersecurity",
+                            RequiredSkills = "Solidity, Ethereum, Web3.js, Cryptography",
+                            ProjectType = "Thesis",
+                            Capacity = 2,
+                            CurrentAssignedCount = 0,
+                            IsAvailable = false,
+                            FacultyOwnerId = supervisor2.Id
+                        },
+                        new Topic
+                        {
+                            Title = "Distributed Log Analytics Dashboard for Campus Services",
+                            Description = "Create an observability dashboard that ingests application logs from multiple campus services, detects anomalies, and visualises service health for the IT operations team.",
+                            Domain = "Software Engineering",
+                            RequiredSkills = "C#, EF Core, SQL Server, Grafana, Docker",
+                            ProjectType = "Project",
+                            Capacity = 3,
+                            CurrentAssignedCount = 1,
+                            IsAvailable = true,
+                            FacultyOwnerId = supervisor1.Id
+                        });
+
+                    await seedContext.SaveChangesAsync();
+                }
+            }
         }
     }
 }
