@@ -122,9 +122,16 @@
     </div>
 </div>
 
+@{
+    bool showRightPanel =
+        (Model.IsCurrentUserLeader && !Model.Team.IsLocked) ||
+        ((Model.IsCurrentUserLeader || Model.IsCoordinator) &&
+            (Model.PendingJoinRequests.Any() || Model.PendingInvitations.Any()));
+}
+
 <div class="row g-4">
     <!-- Left Column: Accepted Roster -->
-    <div class="col-lg-7">
+    <div class="@(showRightPanel ? "col-lg-7" : "col-12")">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
             <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Accepted Team Members</h5>
@@ -198,6 +205,8 @@
         </div>
     </div>
 
+    @if (showRightPanel)
+    {
     <!-- Right Column: Invite & Pending Requests -->
     <div class="col-lg-5">
         @if (Model.IsCurrentUserLeader && !Model.Team.IsLocked)
@@ -310,4 +319,5 @@
             </div>
         }
     </div>
+    }
 </div>
