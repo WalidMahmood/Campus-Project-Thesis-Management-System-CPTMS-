@@ -91,9 +91,9 @@ namespace CPTMS.Controllers
             return View(model);
         }
 
-        // POST / GET: /Account/Logout
+        // POST: /Account/Logout
         [HttpPost]
-        [HttpGet]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
@@ -117,6 +117,19 @@ namespace CPTMS.Controllers
         {
             if (!ModelState.IsValid)
             {
+                return View(model);
+            }
+
+            // Restrict self-registration to non-administrative roles
+            var allowedSelfRegisterRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Student",
+                "Supervisor"
+            };
+
+            if (!allowedSelfRegisterRoles.Contains(model.Role))
+            {
+                ModelState.AddModelError("Role", "Self-registration is only permitted for Student or Faculty Supervisor roles.");
                 return View(model);
             }
 
@@ -146,7 +159,16 @@ namespace CPTMS.Controllers
                     await _roleManager.CreateAsync(new IdentityRole(model.Role));
                 }
 
-                await _userManager.AddToRoleAsync(user, model.Role);
+                var roleResult = await _userManager.AddToRoleAsync(user, model.Role);
+                if (!roleResult.Succeeded)
+                {
+                    foreach (var error in roleResult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                    return View(model);
+                }
+
                 await _signInManager.SignInAsync(user, isPersistent: false);
 
                 _logger.LogInformation("New user registered and signed in: {Email}", model.Email);

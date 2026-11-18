@@ -5,20 +5,22 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add Database Context (Prefers SQL Server, falls back to SQLite if SQL Server unavailable)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Data Source=cptms.db";
+// 1. Add Database Context (Configured via appsettings.json "DatabaseProvider": "Sqlite" or "SqlServer")
+var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // If local SQL Server is available, use SqlServer; otherwise SQLite works out of the box
-    try
+    if (databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
     {
-        options.UseSqlServer(connectionString);
+        var sqlServerConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        options.UseSqlServer(sqlServerConnection);
     }
-    catch
+    else
     {
-        options.UseSqlite("Data Source=cptms.db");
+        var sqliteConnection = builder.Configuration.GetConnectionString("SqliteConnection")
+            ?? "Data Source=cptms.db";
+        options.UseSqlite(sqliteConnection);
     }
 });
 

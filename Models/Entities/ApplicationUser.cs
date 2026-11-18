@@ -24,6 +24,10 @@ namespace CPTMS.Models.Entities
         [Display(Name = "CGPA")]
         public double? CGPA { get; set; }
 
+        [Range(1, 16)]
+        [Display(Name = "Semester")]
+        public int? Semester { get; set; }
+
         public int? CompletedCredits { get; set; }
 
         // Faculty-specific fields
